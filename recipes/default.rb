@@ -274,3 +274,21 @@ p# when 'redhat', 'centos', 'fedora'
     action :create
  end 
 
+if node[:hopsworks][:letsencrypt] == "true" 
+
+   template "/etc/letsencrypt/cli.ini" do
+    source "cli.ini.erb"
+    owner "root"
+    mode 0750
+    action :create
+    variables({
+              })
+  end 
+
+  
+   include_recipe "openssl"
+   hopsworks_grants "sslcert" do
+     action :letsencrypt
+   end 
+    
+end

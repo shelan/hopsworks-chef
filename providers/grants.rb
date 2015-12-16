@@ -48,3 +48,24 @@ notifying_action :sshkeys do
   node.normal[:hopsworks][:public_key]=key.gsub("\n","")
 end
 
+notifying_action :letsencrypt do
+
+  # https://community.letsencrypt.org/t/how-to-use-the-certificate-for-tomcat/3677/9
+
+  bash 'insert_hopsworks_rows' do
+    user "root"
+    code <<-EOF
+
+      git clone https://github.com/letsencrypt/letsencrypt
+
+      cd #{node['glassfish']['base_dir']}/glassfish/domains/domain1/config
+      openssl pkcs12 -export -in fullchain.pem -inkey privkey.pem -out fullchain_and_key.p12 -name glassfish
+      keytool -importkeystore -deststorepass changeit -destkeypass changeit -destkeystore MyDSKeyStore.jks -srckeystore fullchain_and_key.p12 -srcstoretype PKCS12 -srcstorepass changeit -alias glassfish
+
+# Test with: openssl s_client -connect localhost:443 
+    EOF
+    not_if { ::File.exists?("#{node['glassfish']['base_dir']}/.hopsworks_rows.sql") }
+  end
+
+
+end

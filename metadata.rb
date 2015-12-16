@@ -23,6 +23,8 @@ depends 'zeppelin'
 depends 'hiway'
 depends 'charon'
 depends 'sudo'
+depends 'openssl'
+
 
 recipe  "hopsworks::install", "Installs HopsHub/Glassfish"
 
@@ -165,4 +167,8 @@ attribute "hopsworks/reinstall",
 
 attribute "hopsworks/war_url",
           :description => "Url for the hopsworks war file",
+          :type => 'string'
+
+attribute "hopsworks/letsencrypt",
+          :description => "Acquire a LetsEncrypt SSL Certificate (set to 'true') to do this.",
           :type => 'string'

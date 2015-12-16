@@ -69,3 +69,4 @@ node.normal[:hadoop][:user_envs]          = "false"
 
 default[:hopsworks][:reinstall]           = "false"
 
+default[:hopsworks][:letsencrypt]         = "false"

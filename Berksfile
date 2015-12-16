@@ -20,3 +20,4 @@ cookbook 'ark'
 cookbook 'sudo'
 cookbook 'elastic', github: "hopshadoop/elasticsearch-chef", branch: "master"
 cookbook 'elasticsearch', github: 'elastic/cookbook-elasticsearch',  tag: "v1.2.0"
+cookbook 'openssl'
