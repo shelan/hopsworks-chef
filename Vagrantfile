@@ -97,7 +97,7 @@ Vagrant.configure("2") do |c|
      "private_ips" => ["10.0.2.15"],
      "hops"  =>    {
                 "use_hopsworks" => "true",
-#               "download_url" => "http://snurran.sics.se/hops/beta/hops-2.4.0.tgz",
+                "download_url" => "http://snurran.sics.se/hops/beta/hops-2.4.0.tgz",
 		 "rm" =>    { 
        	  	      "private_ips" => ["10.0.2.15"]
                  },
@@ -187,7 +187,7 @@ Vagrant.configure("2") do |c|
       chef.add_recipe "flink::install"
       chef.add_recipe "zeppelin::install"
       #chef.add_recipe "elastic::install"
-      chef.add_recipe "kzookeeper::install"
+      #chef.add_recipe "kzookeeper::install"
 #      chef.add_recipe "kkafka::install"
       chef.add_recipe "ndb::mgmd"
       chef.add_recipe "ndb::ndbd"
