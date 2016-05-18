@@ -1,5 +1,18 @@
-
 include_recipe "hops::wrap"
+
+case node.platform
+when "ubuntu"
+ if node.platform_version.to_f <= 14.04
+   node.override.hopsworks.systemd = "false"
+ end
+end
+
+if node.hopsworks.systemd === "true" 
+  systemd = true
+else
+  systemd = false
+end
+
 
 ##
 ## default.rb
@@ -19,35 +32,61 @@ realmname="kthfsrealm"
 #mysql_pwd=node.mysql.password
 
 
-tables_path = "#{Chef::Config.file_cache_path}/tables.sql"
-rows_path = "#{Chef::Config.file_cache_path}/rows.sql"
-
-
-hopsworks_grants "creds" do
-  tables_path  "#{tables_path}"
-  rows_path  "#{rows_path}"
-  action :nothing
-end 
-
- Chef::Log.info("Could not find previously defined #{tables_path} resource")
- template tables_path do
-    source File.basename("#{tables_path}") + ".erb"
-    owner node.glassfish.user
-    mode 0750
-    action :create
-    variables({
-                :private_ip => private_ip
-              })
-    notifies :create_tables, 'hopsworks_grants[creds]', :immediately
-  end 
-
-
 begin
   elastic_ip = private_recipe_ip("elastic","default")
 rescue 
   elastic_ip = ""
   Chef::Log.warn "could not find elastic server for HopsWorks!"
 end
+
+begin
+  spark_history_server_ip = private_recipe_ip("hadoop_spark","historyserver")
+rescue 
+  spark_history_server_ip = ""
+  Chef::Log.warn "could not find spark history server ip for HopsWorks!"
+end
+
+
+
+tables_path = "#{Chef::Config.file_cache_path}/tables.sql"
+rows_path = "#{Chef::Config.file_cache_path}/rows.sql"
+
+hopsworks_grants "hopsworks_tables" do
+  tables_path  "#{tables_path}"
+  rows_path  "#{rows_path}"
+  action :nothing
+end 
+
+Chef::Log.info("Could not find previously defined #{tables_path} resource")
+template tables_path do
+  source File.basename("#{tables_path}") + ".erb"
+  owner node.glassfish.user
+  mode 0750
+  action :create
+  variables({
+                :private_ip => private_ip
+              })
+    notifies :create_tables, 'hopsworks_grants[hopsworks_tables]', :immediately
+end 
+
+timerTable = "ejbtimer_mysql.sql"
+timerTablePath = "#{Chef::Config.file_cache_path}/#{timerTable}"
+
+hopsworks_grants "timers_tables" do
+  tables_path  "#{timerTablePath}"
+  rows_path  ""
+  action :nothing
+end 
+
+
+template timerTablePath do
+  source File.basename("#{timerTablePath}") + ".erb"
+  owner "root"
+  mode 0750
+  action :create
+  notifies :create_timers, 'hopsworks_grants[timers_tables]', :immediately
+end 
+
 
 
 template "#{rows_path}" do
@@ -56,6 +95,7 @@ template "#{rows_path}" do
    mode 0755
    action :create
     variables({
+                :spark_history_server_ip => spark_history_server_ip,
                 :elastic_ip => elastic_ip,
                 :spark_dir => node.hadoop_spark.dir + "/spark",                
                 :spark_user => node.hadoop_spark.user,
@@ -74,9 +114,11 @@ template "#{rows_path}" do
                 :elastic_user => node.elastic.user,
                 :yarn_default_quota => node.hopsworks.yarn_default_quota_mins.to_i * 60,
                 :hdfs_default_quota => node.hopsworks.hdfs_default_quota_gbs.to_i * 1024 * 1024 * 1024,
-                :max_num_proj_per_user => node.hopsworks.max_num_proj_per_user
+                :max_num_proj_per_user => node.hopsworks.max_num_proj_per_user,
+                :kafka_num_replicas => node.hopsworks.kafka_num_replicas,
+                :kafka_num_partitions => node.hopsworks.kafka_num_partitions
               })
-   notifies :insert_rows, 'hopsworks_grants[creds]', :immediately
+   notifies :insert_rows, 'hopsworks_grants[hopsworks_tables]', :immediately
 end
 
 
@@ -99,7 +141,7 @@ timerDB = "jdbc/hopsworksTimers"
 asadmin = "#{node.glassfish.base_dir}/versions/current/bin/asadmin"
 admin_pwd="#{domains_dir}/#{domain_name}_admin_passwd"
 
-
+password_file = "#{domains_dir}/#{domain_name}_admin_passwd"
 
 login_cnf="#{domains_dir}/#{domain_name}/config/login.conf"
 file "#{login_cnf}" do
@@ -114,6 +156,17 @@ template "#{login_cnf}" do
   mode "0600"
 end
 
+
+hopsworks_grants "reload_sysv" do
+ tables_path  ""
+ rows_path  ""
+ action :reload_sysv
+end 
+
+
+#case node.platform
+# when "debian"
+
 glassfish_secure_admin domain_name do
   domain_name domain_name
   password_file "#{domains_dir}/#{domain_name}_admin_passwd"
@@ -122,6 +175,10 @@ glassfish_secure_admin domain_name do
   secure false
   action :enable
 end
+
+
+#end
+
 
 
 props =  { 
@@ -197,6 +254,15 @@ glassfish_asadmin "set server-config.ejb-container.ejb-timer-service.timer-datas
    secure false
 end
 
+glassfish_asadmin "set server.http-service.virtual-server.server.property.send-error_1=\"code=404 path=#{domains_dir}/#{domain_name}/docroot/404.html reason=Resource_not_found\"" do
+   domain_name domain_name
+   password_file "#{domains_dir}/#{domain_name}_admin_passwd"
+   username username
+   admin_port admin_port
+   secure false
+end
+
+
 
 # cluster="hopsworks"
 
@@ -236,14 +302,6 @@ end
 #    secure false
 # end
 
-
-glassfish_asadmin "set server.http-service.virtual-server.server.property.send-error_1=\"code=404 path=#{domains_dir}/#{domain_name}/docroot/404.html reason=Resource_not_found\"" do
-   domain_name domain_name
-   password_file "#{domains_dir}/#{domain_name}_admin_passwd"
-   username username
-   admin_port admin_port
-   secure false
-end
 
 if node.hopsworks.gmail.password .eql? "password"
 
@@ -290,6 +348,7 @@ end
 
 
 
+
 # directory "/srv/users" do
 #   owner node.glassfish.user
 
@@ -319,14 +378,3 @@ end
  end 
 
 
-
- # Directory for RS erasure coded data
-for d in %w{ /raidrs /parity }
-  # apache_hadoop_hdfs_directory "#{d}" do
-  #   action :create_as_superuser
-  #   owner node.apache_hadoop.hdfs.user
-  #   group node.apache_hadoop.group
-  #   mode "1777"
-  #   not_if ". #{node.hadoop.home}/sbin/set-env.sh && #{node.apache_hadoop.home}/bin/hdfs dfs -test -d #{d}"
-  # end
-end

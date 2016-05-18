@@ -5,6 +5,8 @@ license          "Apache v2.0"
 description      "Installs/Configures HopsWorks, the UI for Hops Hadoop."
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          "0.1.0"
+source_url       "https://github.com/hopshadoop/hopsworks-chef"
+
 
 %w{ ubuntu debian centos rhel }.each do |os|
   supports os
@@ -34,6 +36,7 @@ recipe  "hopsworks::dev", "Installs development libraries needed for HopsWorks d
 
 recipe  "hopsworks::letsencypt", "Given a glassfish installation and a letscrypt installation, update glassfish's key."
 
+recipe  "hopsworks::certificateauthority", "Creates Certificate Authority"
 #######################################################################################
 # Required Attributes
 #######################################################################################
@@ -195,6 +198,14 @@ attribute "hops/dir",
 
 attribute "hadoop_spark/dir",
           :description => "Installation directory.",
+          :type => 'string'
+
+attribute "hopsworks.kafka_num_replicas",
+          :description => "Default number of replicas for Kafka Topics.",
+          :type => 'string'
+
+attribute "hopsworks.kafka_num_partitions",
+          :description => "Default number of partitions for Kafka Topics.",
           :type => 'string'
 
 
