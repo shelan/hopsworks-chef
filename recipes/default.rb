@@ -22,9 +22,10 @@ end
 # not be correct. install_dir is updated by install.rb, but not persisted, so we need to
 # reset it
 if node.glassfish.install_dir.include?("versions") == false
-  node.override.glassfish.install_dir = node.glassfish.install_dir + "/glassfish/versions/current"
+  node.override.glassfish.install_dir = "#{node.glassfish.install_dir}/glassfish/versions/current"
 end
 
+domains_dir = node.glassfish.domains_dir
 private_ip=my_private_ip()
 hopsworks_db = "hopsworks"
 realmname="kthfsrealm"
@@ -48,8 +49,8 @@ end
 
 
 
-tables_path = "#{Chef::Config.file_cache_path}/tables.sql"
-rows_path = "#{Chef::Config.file_cache_path}/rows.sql"
+tables_path = "#{domains_dir}/tables.sql"
+rows_path = "#{domains_dir}/rows.sql"
 
 hopsworks_grants "hopsworks_tables" do
   tables_path  "#{tables_path}"
@@ -130,7 +131,6 @@ end
 username=node.hopsworks.admin.user
 password=node.hopsworks.admin.password
 domain_name="domain1"
-domains_dir = node.glassfish.domains_dir
 admin_port = 4848
 mysql_host = private_recipe_ip("ndb","mysqld")
 
