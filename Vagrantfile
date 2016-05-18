@@ -14,13 +14,13 @@ Vagrant.configure("2") do |c|
   c.vm.hostname = "default-ubuntu-1404.vagrantup.com"
 
 # MySQL Server
-  c.vm.network(:forwarded_port, {:guest=>3306, :host=>3307})
+  c.vm.network(:forwarded_port, {:guest=>3306, :host=>3306})
 # HTTP webserver
-  c.vm.network(:forwarded_port, {:guest=>8080, :host=>8081})
+  c.vm.network(:forwarded_port, {:guest=>8080, :host=>8080})
 # HTTPS webserver
-  c.vm.network(:forwarded_port, {:guest=>8181, :host=>8182})
+  c.vm.network(:forwarded_port, {:guest=>8181, :host=>8181})
 # Glassfish webserver
-  c.vm.network(:forwarded_port, {:guest=>4848, :host=>4849})
+  c.vm.network(:forwarded_port, {:guest=>4848, :host=>4848})
 # HDFS webserver
   c.vm.network(:forwarded_port, {:guest=>50070, :host=>50070})
 # 
@@ -39,7 +39,7 @@ Vagrant.configure("2") do |c|
     p.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
     p.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
     p.customize ["modifyvm", :id, "--nictype1", "virtio"]
-    p.customize ["modifyvm", :id, "--cpus", "2"]
+    p.customize ["modifyvm", :id, "--cpus", "4"]
   end
 
 
@@ -77,17 +77,17 @@ Vagrant.configure("2") do |c|
 	  "default" =>      { 
    	  	       "private_ips" => ["10.0.2.15"]
 	       },
-#          "version" => "2.1.2",
-#          "checksum" => "069cf3ab88a36d01f86e54b46169891b0adef6eda126ea35e540249d904022e1", 
-#	  "jdbc_importer" =>      { 
-#               "version" => "2.1.1.2"
-#          },
+          "version" => "2.1.2",
+          "checksum" => "069cf3ab88a36d01f86e54b46169891b0adef6eda126ea35e540249d904022e1", 
+	  "jdbc_importer" =>      { 
+               "version" => "2.1.1.2"
+          },
      },
      "public_ips" => ["10.0.2.15"],
      "private_ips" => ["10.0.2.15"],
      "hops"  =>    {
                 "use_hopsworks" => "true",
-#               "download_url" => "http://snurran.sics.se/hops/beta/hops-2.4.0.tgz"
+#               "download_url" => "http://snurran.sics.se/hops/beta/hops-2.4.0.tgz",
 		 "rm" =>    { 
        	  	      "private_ips" => ["10.0.2.15"]
                  },
@@ -171,7 +171,7 @@ Vagrant.configure("2") do |c|
       chef.add_recipe "hadoop_spark::install"
       chef.add_recipe "flink::install"
       chef.add_recipe "zeppelin::install"
-#      chef.add_recipe "elastic::install"
+      #chef.add_recipe "elastic::install"
       chef.add_recipe "kzookeeper::install"
       #chef.add_recipe "kkafka::install"
       chef.add_recipe "ndb::mgmd"
